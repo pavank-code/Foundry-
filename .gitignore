@@ -9,3 +9,8 @@ build/
 .venv/
 venv/
 .env
+work/
+smart_city_results/
+outputs/smart_city_results/
+
+
