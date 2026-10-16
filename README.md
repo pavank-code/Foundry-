@@ -53,57 +53,57 @@ datathon/
 
 ```mermaid
 flowchart LR
-    subgraph INPUT["📥 INPUT AREA"]
-        CSV["CSV uploads<br/>locations / incidents / complaints"]
-        LIVE["Live streams<br/>sensors · 311 API · IoT"]
-        MAN["Manual entries<br/>officer reports"]
-    end
-    subgraph ROUTER["🔀 SMART ROUTER"]
-        SCHEMA["Schema Embeddings<br/>cosine s_jk + M=a·s+bT+cV+dD"]
-        VALID["Validation<br/>FK · types · ranges"]
-        QUAR["Quarantine<br/>validation_issues"]
-    end
-    subgraph SPARK["⚡ APACHE SPARK (distributed)"]
-        direction TB
-        ING["Spark Ingest<br/>batch + structured streaming"]
-        DEDUP["Entity resolution<br/>R=α·text+β·geo+γ·attr"]
-        AGG["Spatiotemporal aggs<br/>windowed counts · sev"]
-        ML["MLlib / models<br/>NegBin · GBDT · survival"]
-    end
-    subgraph ONTO["🕸️ CIVIC ONTOLOGY GRAPH"]
-        LOC(["📍Location"])
-        INC(["🚨Incident"])
-        CMP(["📢Complaint"])
-        RES(["👷Resource"])
-        INT(["🔧Intervention"])
-        WO(["📋WorkOrder"])
-        DEC(["✅Decision"])
-        LOC --- INC & CMP & INT
-        INT --- WO & RES
-        WO --- DEC
-    end
-    subgraph BRAIN["🧠 PRIORITY BRAIN"]
-        SCORE["Transparent scorer<br/>100·(0.30freq+0.30sev+0.15rec+0.15back+0.10vuln)"]
-        BAYES["Bayes Gamma-Poisson<br/>P(λ>15|D) + CI"]
-        OPT["Knapsack optimizer<br/>max Σb·x s.t. Σc·x≤B"]
-    end
-    subgraph UX["🖥️ 8-PAGE OPS TERMINAL"]
-        MAP["Map+Queue"]
-        EV["Evidence 360"]
-        PLAN["Planner/What-if"]
-        TRUST["Pipeline+Trust"]
-        COP["Copilot"]
-    end
-    CSV & LIVE & MAN --> SCHEMA --> VALID
-    VALID -->|clean| ING
-    VALID -->|bad| QUAR
-    ING --> DEDUP --> AGG --> ML
-    AGG --> ONTO
-    ML --> BRAIN
-    ONTO --> BRAIN
-    BRAIN --> UX
-    UX -->|actions| DEC
-    DEC -.->|feedback| BRAIN
+    CSV[CSV uploads]
+    LIVE[Live streams]
+    MAN[Manual entries]
+    SCHEMA[Schema match]
+    VALID[Validation]
+    QUAR[Quarantine]
+    ING[Spark ingest]
+    DEDUP[Dedup resolve]
+    AGG[Window aggs]
+    ML[ML models]
+    LOC[Location]
+    INC[Incident]
+    CMP[Complaint]
+    RESX[Resource]
+    INTV[Intervention]
+    WOX[WorkOrder]
+    DECX[Decision]
+    SCORE[Priority scorer]
+    BAYES[Bayes risk]
+    OPT[Optimizer]
+    MAP[Map Queue]
+    EV[Evidence 360]
+    PLAN[Planner]
+    TRUSTX[Trust]
+    COP[Copilot]
+    CSV --> SCHEMA
+    LIVE --> SCHEMA
+    MAN --> SCHEMA
+    SCHEMA --> VALID
+    VALID --> ING
+    VALID --> QUAR
+    ING --> DEDUP
+    DEDUP --> AGG
+    AGG --> ML
+    AGG --> LOC
+    LOC --> INC
+    LOC --> CMP
+    LOC --> INTV
+    INTV --> WOX
+    INTV --> RESX
+    WOX --> DECX
+    ML --> SCORE
+    LOC --> SCORE
+    SCORE --> BAYES
+    BAYES --> OPT
+    OPT --> MAP
+    OPT --> EV
+    OPT --> PLAN
+    OPT --> TRUSTX
+    OPT --> COP
+    DECX --> OPT
 ```
 
 > **Hackathon truth:** V1 runs Spark-logic on pandas/SQLite (same code paths, zero cluster cost). Swap `etl.py` batch frame → `spark.readStream` + Delta Lake for prod — API contracts don't change.
@@ -132,18 +132,18 @@ Canonical truth: **incident ≠ location ≠ ranking ≠ repair action.** Four d
 
 ```mermaid
 erDiagram
-    LOCATIONS ||--o{ INCIDENTS : "has (location_id FK)"
-    LOCATIONS ||--o{ COMPLAINTS : "has (location_id FK)"
-    LOCATIONS ||--|| LOCATION_AGG : "rolls to"
-    LOCATION_AGG ||--o{ RANKING_RESULTS : "scores in"
-    RANKING_RUNS ||--o{ RANKING_RESULTS : "versions"
-    LOCATIONS ||--o{ INTERVENTIONS : "proposes"
-    INTERVENTIONS ||--o{ WORK_ORDERS : "executes"
-    RESOURCES ||--o{ WORK_ORDERS : "staffs"
-    INTERVENTIONS ||--o{ DECISIONS : "audits"
-    DATA_SOURCES ||--o{ INGESTION_BATCHES : "feeds"
-    INGESTION_BATCHES ||--o{ VALIDATION_ISSUES : "quarantines"
-    SCENARIOS ||--o{ DECISIONS : "replays"
+    LOCATIONS ||--o{ INCIDENTS : has
+    LOCATIONS ||--o{ COMPLAINTS : has
+    LOCATIONS ||--|| LOCATION_AGG : rolls_to
+    LOCATION_AGG ||--o{ RANKING_RESULTS : scores_in
+    RANKING_RUNS ||--o{ RANKING_RESULTS : versions
+    LOCATIONS ||--o{ INTERVENTIONS : proposes
+    INTERVENTIONS ||--o{ WORK_ORDERS : executes
+    RESOURCES ||--o{ WORK_ORDERS : staffs
+    INTERVENTIONS ||--o{ DECISIONS : audits
+    DATA_SOURCES ||--o{ INGESTION_BATCHES : feeds
+    INGESTION_BATCHES ||--o{ VALIDATION_ISSUES : quarantines
+    SCENARIOS ||--o{ DECISIONS : replays
 ```
 
 | Table | Owns | Answers |
